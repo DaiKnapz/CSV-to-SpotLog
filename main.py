@@ -1,5 +1,8 @@
 import sys
 import csv
+import datetime
+from lxml import etree as ET
+from pathlib import Path
 
 class LocoSpot:
     def __init__(self, number, note, location, haul, hold, date):
@@ -13,7 +16,7 @@ class LocoSpot:
         return f'Number: {self.number}\nLocation: {self.location}\nDate: {self.date}\nHaul: {self.haul}\nHold: {self.hold}'
 
 
-with open('trains.csv') as csvFilie:
+with open(str(sys.argv[1])) as csvFilie:
     csvReader = csv.reader(csvFilie, delimiter=',')
     lineCount = 0
     locos = []
@@ -25,8 +28,17 @@ with open('trains.csv') as csvFilie:
             date = row[2]
             location = row[3]
             note = row[4]
-            haul = True if (row[0] == "Haul") else False
-            loco = LocoSpot(number, note, location, haul, False, date)
+            haul = '1' if (row[0] == "Haul") else '0'
+            loco = LocoSpot(number, note, location, haul, '0', date)
             locos.append(loco)
-    print(*locos, sep = "\n\n")
+    root = ET.Element("spotlog", version="v4.47")
+    doc = ET.SubElement(root, "records")
+
+    for loco in locos:
+        ET.SubElement(doc, "record", number=loco.number, date=loco.date, location=loco.location, haul=loco.haul, hold=loco.hold)
+    
+    tree = ET.ElementTree(root)
+    filename = Path(csvFilie.name).stem + ".xml"
+    tree.write(filename, pretty_print=True)
+    #print(*locos, sep = "\n\n")
 
